@@ -62,6 +62,9 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.multiplatformSettings.noArg)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.contentNegotiation)
             implementation(libs.ktor.serialization.kotlinxJson)
@@ -71,6 +74,7 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
+            implementation(libs.multiplatformSettings.test)
         }
     }
 }

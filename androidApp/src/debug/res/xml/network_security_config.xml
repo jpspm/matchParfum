@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug builds only (overrides src/main): perfume-api is reached over plain HTTP at whatever
+    LAN address `api.baseUrl` in local.properties points to, so allow cleartext everywhere.
+    Release builds keep the main config, which only allows the emulator/localhost hosts.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

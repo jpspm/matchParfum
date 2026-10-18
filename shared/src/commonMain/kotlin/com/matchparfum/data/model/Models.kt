@@ -92,6 +92,17 @@ data class SearchResponse(
     val items: List<PerfumeSummary>,
 )
 
+@Serializable
+data class Brand(
+    val name: String,
+    @SerialName("perfume_count") val perfumeCount: Int = 0,
+)
+
+@Serializable
+data class BrandsResponse(
+    val items: List<Brand>,
+)
+
 /** Body of every error response (`application/problem+json`). */
 @Serializable
 data class ProblemDetails(

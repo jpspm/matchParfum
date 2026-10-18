@@ -8,7 +8,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
+import com.matchparfum.data.remote.defaultBaseUrl
 
 class MainActivity : ComponentActivity() {
     private val requestLocalNetwork =
@@ -20,7 +22,7 @@ class MainActivity : ComponentActivity() {
         requestLocalNetworkAccess()
 
         setContent {
-            App()
+            App(container = remember { AppContainer(BuildConfig.API_BASE_URL.ifEmpty { defaultBaseUrl }) })
         }
     }
 

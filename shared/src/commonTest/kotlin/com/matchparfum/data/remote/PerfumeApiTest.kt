@@ -58,6 +58,50 @@ class PerfumeApiTest {
     }
 
     @Test
+    fun popularSendsGenderAndLimit() = runTest {
+        val api = api { json("""{"items":[{"id":1,"slug":"s","name":"Sauvage","brand":"Dior"}]}""") }
+
+        val result = api.popular(limit = 5, gender = Gender.Unisex)
+
+        val url = requests.single().url
+        assertEquals("/v1/perfumes/popular", url.encodedPath)
+        assertEquals("5", url.parameters["limit"])
+        assertEquals("unisex", url.parameters["gender"])
+        assertEquals("Sauvage", result.items.single().name)
+    }
+
+    @Test
+    fun recommendationsSendBrandFilter() = runTest {
+        val api = api { json("""{"query":{"id":7,"slug":"s","name":"Q","brand":"B"},"recommendations":[]}""") }
+
+        api.recommendations(7, brand = "O Boticário")
+
+        assertEquals("O Boticário", requests.single().url.parameters["brand"])
+    }
+
+    @Test
+    fun brandsSendQueryAndParseCounts() = runTest {
+        val api = api { json("""{"items":[{"name":"Natura","perfume_count":553}]}""") }
+
+        val result = api.brands("natu", limit = 8)
+
+        val url = requests.single().url
+        assertEquals("/v1/brands", url.encodedPath)
+        assertEquals("natu", url.parameters["q"])
+        assertEquals("8", url.parameters["limit"])
+        assertEquals(553, result.items.single().perfumeCount)
+    }
+
+    @Test
+    fun popularWithoutGenderOmitsParameter() = runTest {
+        val api = api { json("""{"items":[]}""") }
+
+        api.popular()
+
+        assertNull(requests.single().url.parameters["gender"])
+    }
+
+    @Test
     fun detailToleratesNullsAndUnknownFields() = runTest {
         val api = api {
             json(

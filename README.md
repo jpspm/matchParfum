@@ -30,6 +30,10 @@ Start the backend (`docker compose up -d api` in perfume-api, port 8000). Defaul
 - Android emulator: `http://10.0.2.2:8000` (`androidMain/.../Platform.android.kt`)
 - Android physical device (USB): `http://localhost:8000` – run `adb reverse tcp:8000 tcp:8000`
   after plugging the phone in (the forward is lost when it disconnects)
+- Android over Wi-Fi (no cable): set `api.baseUrl=http://<this PC's LAN IP>:8000` in `local.properties`
+  and reinstall. Phone and PC must be on the same network, and port 8000 must be allowed through
+  the PC's firewall. Debug builds allow cleartext HTTP to any host (`src/debug/res/xml/network_security_config.xml`);
+  `api.baseUrl` overrides the per-device defaults above when set.
 - iOS simulator: `http://localhost:8000` (`iosMain/.../Platform.ios.kt`)
 
 Cleartext HTTP is allowed only for those dev hosts (`androidApp/src/main/res/xml/network_security_config.xml`,

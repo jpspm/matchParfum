@@ -37,16 +37,18 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.matchparfum.data.model.PerfumeDetail
 import com.matchparfum.data.model.WeightedItem
 import com.matchparfum.ui.common.AccordBars
 import com.matchparfum.ui.common.ErrorState
 import com.matchparfum.ui.common.LoadState
-import com.matchparfum.ui.common.LoadingState
+import com.matchparfum.ui.common.PerfumeImage
 import com.matchparfum.ui.common.RatingLabel
 import com.matchparfum.ui.common.SectionTitle
 import com.matchparfum.ui.common.format
+import com.matchparfum.ui.common.rememberEnterTransitionSettled
 import com.matchparfum.ui.common.metaLine
 import com.matchparfum.ui.theme.AppIcons
 
@@ -54,17 +56,22 @@ import com.matchparfum.ui.theme.AppIcons
 @Composable
 fun DetailScreen(
     viewModel: DetailViewModel,
+    preview: DetailPreview,
+    lifecycle: Lifecycle,
     onBack: () -> Unit,
     onFindSimilar: (PerfumeDetail) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val perfume = (state as? LoadState.Success)?.data
 
+    // Only the cheap preview during the enter slide; the full detail once it has settled.
+    val settled = rememberEnterTransitionSettled(lifecycle)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(perfume?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(perfume?.name ?: preview.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -76,10 +83,25 @@ fun DetailScreen(
     ) { padding ->
         val modifier = Modifier.padding(padding)
         when (val s = state) {
-            LoadState.Loading -> LoadingState(modifier)
+            is LoadState.Success if settled ->
+                DetailContent(s.data, onFindSimilar = { onFindSimilar(s.data) }, modifier)
             is LoadState.Failure -> ErrorState(s.error, onRetry = viewModel::load, modifier = modifier)
-            is LoadState.Success -> DetailContent(s.data, onFindSimilar = { onFindSimilar(s.data) }, modifier)
+            else -> PreviewContent(preview, modifier)
         }
+    }
+}
+
+/** What the previous screen already knew about the perfume, shown while the detail loads. */
+data class DetailPreview(val id: Long, val name: String, val brand: String)
+
+@Composable
+private fun PreviewContent(preview: DetailPreview, modifier: Modifier) {
+    Column(
+        modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Header(preview.id, preview.brand, preview.name, detail = null)
+        LinearProgressIndicator(Modifier.fillMaxWidth())
     }
 }
 
@@ -96,7 +118,7 @@ private fun DetailContent(perfume: PerfumeDetail, onFindSimilar: () -> Unit, mod
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Header(perfume)
+        Header(perfume.id, perfume.brand, perfume.name, detail = perfume)
 
         Button(
             onClick = onFindSimilar,
@@ -139,15 +161,22 @@ private fun DetailContent(perfume: PerfumeDetail, onFindSimilar: () -> Unit, mod
 }
 
 @Composable
-private fun Header(perfume: PerfumeDetail) {
+private fun Header(id: Long, brand: String, name: String, detail: PerfumeDetail?) {
+    PerfumeImage(
+        id,
+        brand,
+        Modifier.fillMaxWidth().padding(horizontal = 64.dp),
+        highRes = true,
+    )
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            perfume.brand.uppercase(),
+            brand.uppercase(),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold,
         )
-        Text(perfume.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+        Text(name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+        val perfume = detail ?: return@Column
         val meta = metaLine(perfume.year, perfume.gender, perfume.collection?.takeIf { it.isNotBlank() })
         if (meta.isNotEmpty()) {
             Text(meta, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

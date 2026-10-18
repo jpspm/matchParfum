@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -19,6 +20,16 @@ dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
 
+/**
+ * Optional `api.baseUrl` in local.properties, e.g. `http://192.168.0.10:8000` to reach perfume-api
+ * over Wi-Fi without a USB cable. Empty = per-device default (see Platform.android.kt).
+ */
+val apiBaseUrl: String = Properties()
+    .apply { rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use(::load) }
+    .getProperty("api.baseUrl")
+    .orEmpty()
+    .trim()
+
 android {
     namespace = "com.matchparfum"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -29,6 +40,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
     packaging {
         resources {
@@ -49,6 +61,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }

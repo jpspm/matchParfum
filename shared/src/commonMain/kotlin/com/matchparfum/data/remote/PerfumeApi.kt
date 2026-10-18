@@ -1,5 +1,6 @@
 package com.matchparfum.data.remote
 
+import com.matchparfum.data.model.BrandsResponse
 import com.matchparfum.data.model.Gender
 import com.matchparfum.data.model.PerfumeDetail
 import com.matchparfum.data.model.ProblemDetails
@@ -19,6 +20,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
@@ -33,6 +36,15 @@ class PerfumeApi(private val client: HttpClient) {
             }
         }
 
+    /** Most-voted perfumes, optionally for one [gender]. */
+    suspend fun popular(limit: Int = DEFAULT_LIMIT, gender: Gender? = null): SearchResponse =
+        call {
+            client.get("v1/perfumes/popular") {
+                parameter("limit", limit)
+                gender?.let { parameter("gender", it.apiValue) }
+            }
+        }
+
     suspend fun perfume(id: Long): PerfumeDetail =
         call { client.get("v1/perfumes/$id") }
 
@@ -40,15 +52,32 @@ class PerfumeApi(private val client: HttpClient) {
         id: Long,
         limit: Int = DEFAULT_LIMIT,
         gender: Gender? = null,
+        /** Only recommend perfumes from this brand (exact name, case-insensitive). */
+        brand: String? = null,
     ): RecommendationResponse =
         call {
             client.get("v1/perfumes/$id/recommendations") {
                 parameter("limit", limit)
                 gender?.let { parameter("gender", it.apiValue) }
+                brand?.let { parameter("brand", it) }
             }
         }
 
-    private suspend inline fun <reified T> call(request: () -> HttpResponse): T {
+    /** Brands whose name contains [query], those with the most perfumes first. */
+    suspend fun brands(query: String, limit: Int = 10): BrandsResponse =
+        call {
+            client.get("v1/brands") {
+                parameter("q", query)
+                parameter("limit", limit)
+            }
+        }
+
+    // Off the main thread: decoding a response (e.g. 30 recommendations) on it drops frames when
+    // the response lands during a screen transition.
+    private suspend inline fun <reified T> call(crossinline request: suspend () -> HttpResponse): T =
+        withContext(Dispatchers.Default) { execute { request() } }
+
+    private suspend inline fun <reified T> execute(request: () -> HttpResponse): T {
         val response = try {
             request()
         } catch (e: CancellationException) {

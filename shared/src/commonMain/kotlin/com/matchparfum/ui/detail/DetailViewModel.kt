@@ -2,6 +2,8 @@ package com.matchparfum.ui.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.matchparfum.data.local.RecentPerfumes
+import com.matchparfum.data.local.toSummary
 import com.matchparfum.data.model.PerfumeDetail
 import com.matchparfum.data.remote.PerfumeApi
 import com.matchparfum.ui.common.LoadState
@@ -13,6 +15,7 @@ import kotlinx.coroutines.launch
 
 class DetailViewModel(
     private val api: PerfumeApi,
+    private val recentPerfumes: RecentPerfumes,
     private val perfumeId: Long,
 ) : ViewModel() {
 
@@ -26,7 +29,9 @@ class DetailViewModel(
     fun load() {
         _state.value = LoadState.Loading
         viewModelScope.launch {
-            _state.value = loadCatching { api.perfume(perfumeId) }
+            val result = loadCatching { api.perfume(perfumeId) }
+            if (result is LoadState.Success) recentPerfumes.add(result.data.toSummary())
+            _state.value = result
         }
     }
 }

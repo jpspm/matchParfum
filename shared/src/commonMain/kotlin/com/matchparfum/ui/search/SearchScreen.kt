@@ -11,10 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -44,6 +41,7 @@ import com.matchparfum.data.model.PerfumeSummary
 import com.matchparfum.ui.common.ErrorState
 import com.matchparfum.ui.common.LoadState
 import com.matchparfum.ui.common.MessageState
+import com.matchparfum.ui.common.PerfumeThumbnail
 import com.matchparfum.ui.common.RatingLabel
 import com.matchparfum.ui.common.metaLine
 import com.matchparfum.ui.theme.AppIcons
@@ -55,6 +53,7 @@ fun SearchScreen(
     onPerfumeClick: (PerfumeSummary) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val recent by viewModel.recent.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
     Scaffold(
@@ -99,11 +98,13 @@ fun SearchScreen(
 
             Box(Modifier.fillMaxSize()) {
                 when (val results = state.results) {
-                    null -> MessageState(
-                        title = "Search the catalog",
-                        message = "Type at least 3 letters of a brand or perfume, " +
-                            "e.g. \"Sauvage\" or \"Natura Kaiak\".",
-                        icon = AppIcons.Search,
+                    null -> HomeContent(
+                        filter = state.filter,
+                        onFilterChange = viewModel::onFilterChange,
+                        recent = recent,
+                        popular = state.popular,
+                        onRetryPopular = viewModel::loadPopular,
+                        onPerfumeClick = onPerfumeClick,
                     )
                     LoadState.Loading -> LinearProgressIndicator(Modifier.fillMaxWidth())
                     is LoadState.Failure -> ErrorState(results.error, onRetry = viewModel::retry)
@@ -127,7 +128,7 @@ private fun SearchResults(items: List<PerfumeSummary>, onClick: (PerfumeSummary)
         items(items, key = { it.id }) { perfume ->
             PerfumeRow(perfume, onClick = { onClick(perfume) })
             HorizontalDivider(
-                Modifier.padding(start = 72.dp),
+                Modifier.padding(start = PERFUME_ROW_INSET),
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
         }
@@ -135,7 +136,7 @@ private fun SearchResults(items: List<PerfumeSummary>, onClick: (PerfumeSummary)
 }
 
 @Composable
-private fun PerfumeRow(perfume: PerfumeSummary, onClick: () -> Unit) {
+internal fun PerfumeRow(perfume: PerfumeSummary, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -144,7 +145,7 @@ private fun PerfumeRow(perfume: PerfumeSummary, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Monogram(perfume.brand)
+        PerfumeThumbnail(perfume.id, perfume.brand)
         Column(Modifier.weight(1f)) {
             Text(
                 perfume.name,
@@ -167,19 +168,5 @@ private fun PerfumeRow(perfume: PerfumeSummary, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun Monogram(brand: String) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier.size(40.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                brand.firstOrNull()?.uppercase() ?: "?",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-        }
-    }
-}
+/** Where list dividers start: past the row's thumbnail (16dp padding + 48dp image + 16dp gap). */
+internal val PERFUME_ROW_INSET = 80.dp

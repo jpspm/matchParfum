@@ -1,5 +1,6 @@
 [versions]
 agp = "9.1.1"
+coil = "3.3.0"
 android-compileSdk = "37"
 android-minSdk = "24"
 android-targetSdk = "37"
@@ -16,6 +17,7 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
 kotlin = "2.4.20"
 material3 = "1.12.0-alpha03"
+multiplatformSettings = "1.3.0"
 navigation = "2.10.0-rc01"
 
 [libraries]
@@ -48,6 +50,10 @@ ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "k
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+multiplatformSettings-noArg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettings" }
+multiplatformSettings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "multiplatformSettings" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
